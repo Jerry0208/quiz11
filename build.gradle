@@ -27,7 +27,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	//web
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	
+	//Hot Deployment : 專案啟動中，修改程式碼並儲存後，專案會重新啟動
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

@@ -172,12 +172,31 @@ public class QuizServiceImpl implements QuizService {
 
 	@Override
 	public SearchRes search(SearchReq req) {
+
 		// 檢視條件
 		String name = req.getName();
 		// 如果 name = null或空字串或全空白字串，一律都轉成空字串
 		if (!StringUtils.hasText(name)) {
 			name = "";
 		}
+		
+		//依狀態搜尋
+		if (StringUtils.hasText(req.getStatus())) {
+			if (req.getStatus().equalsIgnoreCase("進行中")) {
+				return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(), quizDao.getInProgress(name, LocalDate.now()));
+			}
+			if (req.getStatus().equalsIgnoreCase("已結束")) {
+				return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(), quizDao.getCompleted(name, LocalDate.now()));
+			}
+			if (req.getStatus().equalsIgnoreCase("尚未開始")) {
+				return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(), quizDao.getNotStartedYet(name, LocalDate.now()));
+			}
+			if (req.getStatus().equalsIgnoreCase("尚未公布")) {
+				return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(), quizDao.getNotYetAnnounced(name, LocalDate.now()));
+			}
+		}
+
+	
 		// 若沒有開始日期條件，將日期轉成很早的時間
 		LocalDate startDate = req.getStartDate();
 		if (startDate == null) {
@@ -188,8 +207,12 @@ public class QuizServiceImpl implements QuizService {
 		if (endDate == null) {
 			endDate = LocalDate.of(9999, 12, 31);
 		}
-//		;
 		
+		if(req.isAdminMode()) {
+			return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
+					quizDao.getByConditionsAll(name, startDate, endDate));
+		}
+
 		return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
 				quizDao.getByConditions(name, startDate, endDate));
 	}
