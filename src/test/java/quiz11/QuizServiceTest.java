@@ -32,7 +32,7 @@ public class QuizServiceTest {
 			System.out.printf("問卷id : %d, 問題id : %d, 問題名稱: %s, 選項類型代號: %s, 是否必填: %b, 選項內容: %s \n", item.getQuizId(),
 					item.getQuesId(), item.getQuesName(), item.getType(), item.isRequired(), item.getOptions());
 			String quesStr = item.getOptions();
-			// 將存在 DB 中的資料型態為 String 的 JSON格式選項內容，透過 mapper.readValue 透入QuesOptions中 
+			// 將存在 DB 中的資料型態為 String 的 JSON格式選項內容，透過 mapper.readValue 放入 QuesOptions 中 
 			try {
 				List<QuesOptions> optionList = mapper.readValue(quesStr, new TypeReference<>() {
 				});
@@ -40,7 +40,6 @@ public class QuizServiceTest {
 					System.out.println(option.getOptionNumber() + " " + option.getOption());
 				}
 			} catch (JsonProcessingException e) {
-				System.out.println("不行");
 				e.printStackTrace();
 			}
 		}
