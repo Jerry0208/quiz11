@@ -9,6 +9,7 @@ public enum ResMessage {
 	QUES_TYPE_ERROR(400, "Ques type error!!"),//
 	DATE_ERROR(400, "Date error!!"),//
 	QUIZ_NOT_FOUND(404, "Quiz not found"),//
+	QUES_NOT_FOUND(404, "Ques not found"),//
 	QUIZ_ID_MISMATCH(400, "Quiz id mismatch"),//
 	QUIZ_UPDATE_FAILED(400, "Quiz update failed");
 

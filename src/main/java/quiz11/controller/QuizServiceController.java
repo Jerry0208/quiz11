@@ -11,6 +11,8 @@ import quiz11.service.ifs.QuizService;
 import quiz11.vo.BasicRes;
 import quiz11.vo.CreateUpdateReq;
 import quiz11.vo.DeleteReq;
+import quiz11.vo.GetQuesReq;
+import quiz11.vo.GetQuesRes;
 import quiz11.vo.SearchReq;
 import quiz11.vo.SearchRes;
 
@@ -40,6 +42,11 @@ public class QuizServiceController {
 	@PostMapping(value = "search")
 	public SearchRes search(@RequestBody SearchReq req) {
 		return quizService.search(req);
+	};
+	
+	@PostMapping(value = "get_ques")
+	public GetQuesRes getQues(@RequestBody GetQuesReq req) {
+		return quizService.getQues(req);
 	};
 
 }

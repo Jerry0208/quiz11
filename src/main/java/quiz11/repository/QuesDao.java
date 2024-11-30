@@ -26,4 +26,7 @@ public interface QuesDao extends JpaRepository<Ques, QuesId>{
 	@Query(value = "delete from ques where quiz_id in (:quiz_id)", nativeQuery = true)
 	public void deleteByQuizIdIn(@Param("quiz_id") List<Integer> quizIdList);
 
+	
+	@Query(value = "select * from ques where quiz_id = :quiz_id ", nativeQuery = true)
+	public List<Ques> getByQuizId(@Param("quiz_id") int quizId);
 }
