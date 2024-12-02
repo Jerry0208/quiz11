@@ -53,7 +53,7 @@ public interface QuizDao extends JpaRepository<Quiz, Integer> {
 	
 	// null : name is null or name = null
 	@Query(value = "select id, name, description, start_date, end_date, published from quiz "
-			+ " where quiz_id = :quiz_id and published = true", nativeQuery = true) //published is true 也可以 (資料型態:boolean)
+			+ " where id = :quiz_id and published = true", nativeQuery = true) //published is true 也可以 (資料型態:boolean)
 	public Quiz getByIdAndPublishedTrue(@Param("quiz_id") int quizId); // get 改 find 就是 JPA 語法
 	
 	// 把上面的內容加上時間範圍

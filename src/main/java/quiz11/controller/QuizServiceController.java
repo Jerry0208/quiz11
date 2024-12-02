@@ -11,6 +11,7 @@ import quiz11.service.ifs.QuizService;
 import quiz11.vo.BasicRes;
 import quiz11.vo.CreateUpdateReq;
 import quiz11.vo.DeleteReq;
+import quiz11.vo.FillinReq;
 import quiz11.vo.GetQuesReq;
 import quiz11.vo.GetQuesRes;
 import quiz11.vo.SearchReq;
@@ -48,5 +49,17 @@ public class QuizServiceController {
 	public GetQuesRes getQues(@RequestBody GetQuesReq req) {
 		return quizService.getQues(req);
 	};
+	
+	@PostMapping(value = "fillin")
+	public BasicRes fillin(@RequestBody FillinReq req) {
+		System.out.println(req.getQuizId());
+		System.out.println(req.getUserName());
+		System.out.println(req.getPhone());
+		System.out.println(req.getEmail());
+		System.out.println(req.getAge());
+		System.out.println(req.getFillinDate());
+		System.out.println(req.getAnswer());
+		return quizService.fillin(req);
+	}
 
 }

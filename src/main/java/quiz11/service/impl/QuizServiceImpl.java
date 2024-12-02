@@ -264,14 +264,9 @@ public class QuizServiceImpl implements QuizService {
 		}
 
 		// 使用者名稱、電子信箱
-		if (StringUtils.hasText(req.getUserName()) || StringUtils.hasText(req.getEmail())) {
+		if (!StringUtils.hasText(req.getUserName()) || !StringUtils.hasText(req.getEmail())) {
 			return new BasicRes(ResMessage.USERNAME_AND_EMAIL_REQUIRED.getCode(),
 					ResMessage.USERNAME_AND_EMAIL_REQUIRED.getMessage());
-		}
-
-		// 年齡至少 12 歲
-		if (req.getAge() <= 12) {
-			return new BasicRes(ResMessage.AGE_ABOVE_12.getCode(), ResMessage.AGE_ABOVE_12.getMessage());
 		}
 
 		// 檢查回答 不得為空

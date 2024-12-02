@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class GetQuesReq {
 
 	@JsonProperty("quiz_id")
-	private int QuizId;
+	private int quizId;
 
 	public GetQuesReq() {
 		super();
@@ -13,11 +13,11 @@ public class GetQuesReq {
 
 	public GetQuesReq(int quizId) {
 		super();
-		QuizId = quizId;
+		this.quizId = quizId;
 	}
 
 	public int getQuizId() {
-		return QuizId;
+		return quizId;
 	}
 
 }

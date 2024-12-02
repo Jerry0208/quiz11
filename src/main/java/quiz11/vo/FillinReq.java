@@ -4,11 +4,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FillinReq {
 
-	@JsonProperty("quiz_id")
+	@JsonAlias("quiz_id")
 	private int quizId;
 
 	@JsonProperty("user_name")
@@ -21,6 +22,7 @@ public class FillinReq {
 	private int age;
 
 	//           題號 		  選項
+	@JsonProperty("answer")
 	private Map<Integer, List<String>> answer;
 
 	@JsonProperty("fillin_date")

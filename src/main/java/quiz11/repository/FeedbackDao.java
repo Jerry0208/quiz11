@@ -10,5 +10,5 @@ import quiz11.entity.FeedbackId;
 public interface FeedbackDao extends JpaRepository<Feedback, FeedbackId>{
 
 //	@Query(value = "select 1 from feedback where quiz_id = ?1 and email = ?2", nativeQuery = true)
-	public boolean existsByQuizIdAndEmail(int QuizId, String email); // <-- JPA ¼gªk
+	public boolean existsByQuizIdAndEmail(int quizId, String email); // <-- JPA ¼gªk
 }
