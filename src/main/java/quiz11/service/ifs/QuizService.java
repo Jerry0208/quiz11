@@ -3,6 +3,7 @@ package quiz11.service.ifs;
 import quiz11.vo.BasicRes;
 import quiz11.vo.CreateUpdateReq;
 import quiz11.vo.DeleteReq;
+import quiz11.vo.FillinReq;
 import quiz11.vo.GetQuesReq;
 import quiz11.vo.GetQuesRes;
 import quiz11.vo.SearchReq;
@@ -19,4 +20,6 @@ public interface QuizService {
 	public SearchRes search(SearchReq req);
 	
 	public GetQuesRes getQues(GetQuesReq req);
+	
+	public BasicRes fillin(FillinReq req);
 }

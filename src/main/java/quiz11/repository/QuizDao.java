@@ -8,6 +8,7 @@ import javax.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import quiz11.entity.Quiz;
@@ -49,4 +50,15 @@ public interface QuizDao extends JpaRepository<Quiz, Integer> {
 	@Query(value = "select id, name, description, start_date, end_date, published from quiz "
 			+ "where name like %?1% and published = false", nativeQuery = true)
 	public List<Quiz> getNotYetAnnounced(String name, LocalDate now);
+	
+	// null : name is null or name = null
+	@Query(value = "select id, name, description, start_date, end_date, published from quiz "
+			+ " where quiz_id = :quiz_id and published = true", nativeQuery = true) //published is true 也可以 (資料型態:boolean)
+	public Quiz getByIdAndPublishedTrue(@Param("quiz_id") int quizId); // get 改 find 就是 JPA 語法
+	
+	// 把上面的內容加上時間範圍
+//	@Query(value = "select id, name, description, start_date, end_date, published from quiz "
+//			+ " where quiz_id = :quiz_id and published = true " // 
+//			+ " and :fillin_date between start_date and end_date ", nativeQuery = true) //published is true 也可以 (資料型態:boolean)
+//	public Quiz getByIdAndPublishedTrueBetween(@Param("quiz_id") int quizId,@Param("fillin_date") LocalDate fillinDate); // get 改 find 就是 JPA 語法
 }

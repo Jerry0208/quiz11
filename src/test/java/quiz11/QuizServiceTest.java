@@ -29,7 +29,7 @@ public class QuizServiceTest {
 		GetQuesRes res = quizservice.getQues(new GetQuesReq(4));
 		System.out.println(res.getCode() + res.getMassage());
 		for (Ques item : res.getQues()) {
-			System.out.printf("問卷id : %d, 問題id : %d, 問題名稱: %s, 選項類型代號: %s, 是否必填: %b, 選項內容: %s \n", item.getQuizId(),
+			System.out.printf("問卷id : %d, 問題id : %d, 問題名稱: %s, 選項類型代號: %s, 是否必填: %b, \n選項內容: %s \n", item.getQuizId(),
 					item.getQuesId(), item.getQuesName(), item.getType(), item.isRequired(), item.getOptions());
 			String quesStr = item.getOptions();
 			// 將存在 DB 中的資料型態為 String 的 JSON格式選項內容，透過 mapper.readValue 放入 QuesOptions 中 

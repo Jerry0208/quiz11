@@ -1,7 +1,10 @@
 package quiz11.service.impl;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import javax.transaction.Transactional;
@@ -11,18 +14,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import quiz11.constants.QuesType;
 import quiz11.constants.ResMessage;
+import quiz11.entity.Feedback;
 import quiz11.entity.Ques;
 import quiz11.entity.Quiz;
+import quiz11.repository.FeedbackDao;
 import quiz11.repository.QuesDao;
 import quiz11.repository.QuizDao;
 import quiz11.service.ifs.QuizService;
 import quiz11.vo.BasicRes;
 import quiz11.vo.CreateUpdateReq;
 import quiz11.vo.DeleteReq;
+import quiz11.vo.FillinReq;
 import quiz11.vo.GetQuesReq;
 import quiz11.vo.GetQuesRes;
+import quiz11.vo.QuesOptions;
 import quiz11.vo.SearchReq;
 import quiz11.vo.SearchRes;
 
@@ -30,10 +41,13 @@ import quiz11.vo.SearchRes;
 public class QuizServiceImpl implements QuizService {
 
 	@Autowired
-	QuizDao quizDao;
+	private QuizDao quizDao;
 
 	@Autowired
-	QuesDao quesDao;
+	private QuesDao quesDao;
+
+	@Autowired
+	private FeedbackDao feedbackDao;
 
 	@Transactional
 	@Override
@@ -230,16 +244,137 @@ public class QuizServiceImpl implements QuizService {
 
 	@Override
 	public GetQuesRes getQues(GetQuesReq req) {
-		if(req.getQuizId() <= 0) {
+		if (req.getQuizId() <= 0) {
 			return new GetQuesRes(ResMessage.QUES_PARAM_ERROR.getCode(), ResMessage.QUES_PARAM_ERROR.getMessage());
 		}
 		List<Ques> quesList = quesDao.getByQuizId(req.getQuizId());
-		if(CollectionUtils.isEmpty(quesList)) {
-			return new GetQuesRes(ResMessage.QUES_NOT_FOUND.getCode(), ResMessage.QUES_NOT_FOUND.getMessage());
+		if (CollectionUtils.isEmpty(quesList)) {
+			return new GetQuesRes(ResMessage.QUESTION_NOT_FOUND.getCode(), ResMessage.QUESTION_NOT_FOUND.getMessage());
 		}
-		
-		
-		return  new GetQuesRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(), quesList);
+
+		return new GetQuesRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(), quesList);
+	}
+
+	@Override
+	public BasicRes fillin(FillinReq req) {
+		// 參數檢查
+		// quiz id
+		if (req.getQuizId() <= 0) {
+			return new BasicRes(ResMessage.QUIZ_ID_ERROR.getCode(), ResMessage.QUIZ_ID_ERROR.getMessage());
+		}
+
+		// 使用者名稱、電子信箱
+		if (StringUtils.hasText(req.getUserName()) || StringUtils.hasText(req.getEmail())) {
+			return new BasicRes(ResMessage.USERNAME_AND_EMAIL_REQUIRED.getCode(),
+					ResMessage.USERNAME_AND_EMAIL_REQUIRED.getMessage());
+		}
+
+		// 年齡至少 12 歲
+		if (req.getAge() <= 12) {
+			return new BasicRes(ResMessage.AGE_ABOVE_12.getCode(), ResMessage.AGE_ABOVE_12.getMessage());
+		}
+
+		// 檢查回答 不得為空
+		if (CollectionUtils.isEmpty(req.getAnswer())) {
+			return new BasicRes(ResMessage.ANSWER_REQUIRED.getCode(), ResMessage.ANSWER_REQUIRED.getMessage());
+		}
+
+		// 檢查同一張問卷是否已有相同的 email 填寫
+		if (feedbackDao.existsByQuizIdAndEmail(req.getQuizId(), req.getEmail())) {
+			return new BasicRes(ResMessage.EMAIL_DUPLICATED.getCode(), ResMessage.EMAIL_DUPLICATED.getMessage());
+		}
+
+		// 比對資料庫的問卷和問題
+		// 取資料庫資料，同時檢查問卷是否是以公布的問卷
+		Quiz quiz = quizDao.getByIdAndPublishedTrue(req.getQuizId());
+		// 確認是否確實存在這份問卷
+		if (quiz == null) {
+			return new BasicRes(ResMessage.QUIZ_NOT_FOUND.getCode(), ResMessage.QUIZ_NOT_FOUND.getMessage());
+		}
+
+		// 日期需要檢查填寫的日期是否是問卷可以填寫的時間範圍內
+		if (req.getFillinDate() == null || req.getFillinDate().isBefore(quiz.getStartDate())
+				|| req.getFillinDate().isAfter(quiz.getEndDate())) {
+			return new BasicRes(ResMessage.DATE_RANGE_ERROR.getCode(), ResMessage.DATE_RANGE_ERROR.getMessage());
+		}
+
+		// 比對問題
+		List<Ques> quesList = quesDao.getByQuizId(req.getQuizId());
+		if (CollectionUtils.isEmpty(quesList)) {
+			return new BasicRes(ResMessage.QUESTION_NOT_FOUND.getCode(), ResMessage.QUESTION_NOT_FOUND.getMessage());
+		}
+
+		ObjectMapper mapper = new ObjectMapper();
+
+		// 有回答才有 題號跟回答內容
+		// 題號 選項(1~多個)
+		Map<Integer, List<String>> answerMap = req.getAnswer();
+		for (Ques item : quesList) {
+			// req 中的選項(答案)
+			List<String> ansList = answerMap.get(item.getQuesId());
+			// 必填但沒有答案
+			if (item.isRequired() && CollectionUtils.isEmpty(ansList)) {
+				return new BasicRes(ResMessage.ANSWER_REQUIRED.getCode(), ResMessage.ANSWER_REQUIRED.getMessage());
+			}
+
+			// 單選 或 短述題 不能有複數答案
+			if ((item.getType().equalsIgnoreCase(QuesType.SINGLE.getType())
+					|| item.getType().equalsIgnoreCase(QuesType.TEXT.getType())) && ansList.size() > 1) {
+				return new BasicRes(ResMessage.ONE_OPTION_IS_ALLOWED.getCode(),
+						ResMessage.ONE_OPTION_IS_ALLOWED.getMessage());
+			}
+
+			// 當問題 Type 不是文字(短述題)類型時，需要將資料庫中的選項字串轉成選項(QuesOtions)類別
+			if (!item.getType().equalsIgnoreCase(QuesType.TEXT.getType())) {
+				// ObjectMapper 把 Ques 中的 options 取出 反序列化 用
+
+				List<QuesOptions> optionList = new ArrayList<>();
+				// 把 Ques 中的 options 取出 反序列化
+				// 將存在 DB 中的資料型態為 String 的 JSON 格式選項內容，透過 mapper.readValue 放入 QuesOptions 中
+				try {
+					optionList = mapper.readValue(item.getOptions(), new TypeReference<>() {
+					});
+
+				} catch (Exception e) {
+					return new BasicRes(ResMessage.OPTIONS_TRANSFER_ERROR.getCode(),
+							ResMessage.OPTIONS_TRANSFER_ERROR.getMessage());
+				}
+
+				// 蒐集 List<QuesOptions> 中所以的 option
+				List<String> optionListInDB = new ArrayList<>();
+				for (QuesOptions opt : optionList) {
+					optionListInDB.add(opt.getOption());
+				}
+
+				// 比對 req 中的答案與資料庫中的選項是否一致
+				// 因為 DB 中的選項會比答案多，所以是用多的 List 去 contains 小的 list 中的每一題
+				for (String ans : ansList) {
+					if (!optionListInDB.contains(ans)) {
+						return new BasicRes(ResMessage.OPTION_ANSWER_MISMATCH.getCode(),
+								ResMessage.OPTION_ANSWER_MISMATCH.getMessage());
+					}
+				}
+			}
+
+		}
+
+		// 存資料
+		List<Feedback> feedbackList = new ArrayList<>();
+		// map.getKey()(題號) 的資料型態是 Integer ; str(答案選項) 的資料型態是 List<String>
+		for (Entry<Integer, List<String>> map : answerMap.entrySet()) {
+			try {
+				String str = mapper.writeValueAsString(map.getValue());
+				feedbackList.add(new Feedback(req.getQuizId(), (int) map.getKey(), str, req.getUserName(), //
+						req.getPhone(), req.getEmail(), req.getAge(), req.getFillinDate()));
+			} catch (JsonProcessingException e) {
+				return new BasicRes(ResMessage.OPTIONS_TRANSFER_ERROR.getCode(),
+						ResMessage.OPTIONS_TRANSFER_ERROR.getMessage());
+
+			}
+		}
+		// 存檔
+		feedbackDao.saveAll(feedbackList);
+		return new BasicRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage());
 	}
 
 }

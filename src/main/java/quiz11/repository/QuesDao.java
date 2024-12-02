@@ -14,19 +14,19 @@ import quiz11.entity.Ques;
 import quiz11.entity.QuesId;
 
 @Repository
-public interface QuesDao extends JpaRepository<Ques, QuesId>{
+public interface QuesDao extends JpaRepository<Ques, QuesId> {
 
 	@Transactional
 	@Modifying
 	@Query(value = "delete from ques Where quiz_id = :quiz_id", nativeQuery = true)
 	public void deleteByQuizId(@Param("quiz_id") int quizId);
-	
+
 	@Transactional
 	@Modifying
 	@Query(value = "delete from ques where quiz_id in (:quiz_id)", nativeQuery = true)
 	public void deleteByQuizIdIn(@Param("quiz_id") List<Integer> quizIdList);
 
-	
-	@Query(value = "select * from ques where quiz_id = :quiz_id ", nativeQuery = true)
+	@Query(value = "select quiz_id, ques_id, ques_name, type, required, options "
+			+ " from ques where quiz_id = :quiz_id ", nativeQuery = true)
 	public List<Ques> getByQuizId(@Param("quiz_id") int quizId);
 }
