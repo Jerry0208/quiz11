@@ -1,7 +1,6 @@
 package quiz11.vo;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -10,7 +9,7 @@ public class FeedbackDto {
 	@JsonProperty("quiz_id")
 	private int quizId;
 
-	@JsonProperty("fliin_date")
+	@JsonProperty("fillin_date")
 	private LocalDate fliinDate;
 
 	@JsonProperty("quiz_name")
