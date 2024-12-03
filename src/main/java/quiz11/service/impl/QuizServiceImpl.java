@@ -30,6 +30,8 @@ import quiz11.service.ifs.QuizService;
 import quiz11.vo.BasicRes;
 import quiz11.vo.CreateUpdateReq;
 import quiz11.vo.DeleteReq;
+import quiz11.vo.FeedbackDto;
+import quiz11.vo.FeedbackRes;
 import quiz11.vo.FillinReq;
 import quiz11.vo.GetQuesReq;
 import quiz11.vo.GetQuesRes;
@@ -370,6 +372,17 @@ public class QuizServiceImpl implements QuizService {
 		// 存檔
 		feedbackDao.saveAll(feedbackList);
 		return new BasicRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage());
+	}
+
+	@Override
+	public FeedbackRes feedback(int quizId) {
+		// 參數檢查
+		if (quizId <= 0) {
+			return new FeedbackRes(ResMessage.QUIZ_ID_ERROR.getCode(), ResMessage.QUIZ_ID_ERROR.getMessage());
+		}
+
+		return new FeedbackRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
+				feedbackDao.getFeedBackByQuizId(quizId));
 	}
 
 }
