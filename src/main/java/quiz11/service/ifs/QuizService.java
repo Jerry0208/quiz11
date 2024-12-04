@@ -9,6 +9,7 @@ import quiz11.vo.GetQuesReq;
 import quiz11.vo.GetQuesRes;
 import quiz11.vo.SearchReq;
 import quiz11.vo.SearchRes;
+import quiz11.vo.StaticticsRes;
 
 public interface QuizService {
 
@@ -25,4 +26,6 @@ public interface QuizService {
 	public BasicRes fillin(FillinReq req);
 	
 	public FeedbackRes feedback(int quizId);
+	
+	public StaticticsRes statistics(int quizId);
 }

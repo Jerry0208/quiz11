@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import quiz11.entity.Feedback;
 import quiz11.entity.FeedbackId;
 import quiz11.vo.FeedbackDto;
+import quiz11.vo.StatisticsDto;
 
 @Repository
 public interface FeedbackDao extends JpaRepository<Feedback, FeedbackId> {
@@ -25,4 +26,12 @@ public interface FeedbackDao extends JpaRepository<Feedback, FeedbackId> {
 			+ " join Feedback as fb on qz.id = fb.quizId and qu.quesId = fb.quesId"
 			+ " where qz.id = ?1 ", nativeQuery = false)
 	public List<FeedbackDto> getFeedBackByQuizId(int quizId);
+
+	@Query(value = "select new quiz11.vo.StatisticsDto( "//
+			+ " qz.name, qu.quesId, qu.quesName, qu.type, qu.options, fb.answer ) " //
+			+ " from  Quiz as qz " //
+			+ " join Ques as qu on qz.id = qu.quizId"//
+			+ " join Feedback as fb on qz.id = fb.quizId and qu.quesId = fb.quesId"//
+			+ " where qz.id = ?1", nativeQuery = false)
+	public List<StatisticsDto> getStatisticsByQuizId(int quizIs);
 }

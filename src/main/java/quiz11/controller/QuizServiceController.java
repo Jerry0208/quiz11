@@ -19,6 +19,7 @@ import quiz11.vo.GetQuesReq;
 import quiz11.vo.GetQuesRes;
 import quiz11.vo.SearchReq;
 import quiz11.vo.SearchRes;
+import quiz11.vo.StaticticsRes;
 
 @RestController
 @RequestMapping("quiz/")
@@ -61,6 +62,11 @@ public class QuizServiceController {
 	@GetMapping(value = "feedback") // http://localhost:8080/quiz/feedback ? quizId = °Ý¨÷id
 	public FeedbackRes feedback(@RequestParam int quizId) {
 		return quizService.feedback(quizId);
+	}
+	
+	@GetMapping(value = "statistics")
+	public StaticticsRes statistics(@RequestParam int quizId) {
+		return quizService.statistics(quizId);
 	}
 
 }

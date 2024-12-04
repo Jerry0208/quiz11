@@ -2,6 +2,7 @@ package quiz11.service.impl;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,7 +31,6 @@ import quiz11.service.ifs.QuizService;
 import quiz11.vo.BasicRes;
 import quiz11.vo.CreateUpdateReq;
 import quiz11.vo.DeleteReq;
-import quiz11.vo.FeedbackDto;
 import quiz11.vo.FeedbackRes;
 import quiz11.vo.FillinReq;
 import quiz11.vo.GetQuesReq;
@@ -38,9 +38,14 @@ import quiz11.vo.GetQuesRes;
 import quiz11.vo.QuesOptions;
 import quiz11.vo.SearchReq;
 import quiz11.vo.SearchRes;
+import quiz11.vo.StaticticsRes;
+import quiz11.vo.StatisticsDto;
+import quiz11.vo.StatisticsVo;
 
 @Service
 public class QuizServiceImpl implements QuizService {
+
+	private ObjectMapper mapper = new ObjectMapper();
 
 	@Autowired
 	private QuizDao quizDao;
@@ -301,8 +306,6 @@ public class QuizServiceImpl implements QuizService {
 			return new BasicRes(ResMessage.QUESTION_NOT_FOUND.getCode(), ResMessage.QUESTION_NOT_FOUND.getMessage());
 		}
 
-		ObjectMapper mapper = new ObjectMapper();
-
 		// 有回答才有 題號跟回答內容
 		// 題號 選項(1~多個)
 		Map<Integer, List<String>> answerMap = req.getAnswer();
@@ -383,6 +386,104 @@ public class QuizServiceImpl implements QuizService {
 
 		return new FeedbackRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
 				feedbackDao.getFeedBackByQuizId(quizId));
+	}
+
+	@Override
+	public StaticticsRes statistics(int quizId) {
+		// 參數檢查
+		if (quizId <= 0) {
+			return new StaticticsRes(ResMessage.QUIZ_ID_ERROR.getCode(), //
+					ResMessage.QUIZ_ID_ERROR.getMessage());
+		}
+
+		List<StatisticsDto> dtoList = feedbackDao.getStatisticsByQuizId(quizId);
+
+		// 將 Dto 的內容轉成 Vo
+		List<StatisticsVo> voList = new ArrayList<>();
+
+		mainLoop: for (StatisticsDto dto : dtoList) {
+			// 用來判斷 voList 中是否已存在相同問題編號的 vo
+			boolean isDuplicated = false;
+			Map<String, Integer> optionCountMap = new HashMap<>();
+			StatisticsVo vo = new StatisticsVo();
+
+			// 從 volist 取出有相同 quesId 的 vo --> 目的是不用再重新蒐集選項，直接計算次數
+			for (StatisticsVo voItem : voList) {
+				if (voItem.getQuesId() == dto.getQuesId()) {
+					optionCountMap = voItem.getOptionCountMap();
+					vo = voItem;
+					isDuplicated = true;
+					break;
+				}
+			}
+			// !isDuplicated 表示 voList 中沒有相同問題編號的 vo
+			if (!isDuplicated) {
+				voList.add(vo);
+			}
+
+			List<QuesOptions> optionList = new ArrayList<>();
+			List<String> answerList = new ArrayList<>();
+			// 把 dto 中的 OptionsStr 取出 反序列化
+			// 將存在 DB 中的資料型態為 String 的 JSON 格式選項內容，透過 mapper.readValue 放入 QuesOptions 中
+			try {
+				// 題型是 text 時，選項沒有值
+				if (!dto.getType().equalsIgnoreCase(QuesType.TEXT.getType())) {
+					optionList = mapper.readValue(dto.getOptionsStr(), new TypeReference<>() {
+					});
+				}
+
+				// 只有以下條件才能將答案字串轉乘 List<String>
+				// 1.answer
+				// 2.非簡答(文字)類別題目
+				if (StringUtils.hasText(dto.getAnswerStr()) //
+						&& !dto.getType().equalsIgnoreCase(QuesType.TEXT.getType())) {
+					answerList = mapper.readValue(dto.getAnswerStr(), new TypeReference<>() {
+					});
+				}
+			} catch (Exception e) {
+				return new StaticticsRes(ResMessage.OPTIONS_TRANSFER_ERROR.getCode(),
+						ResMessage.OPTIONS_TRANSFER_ERROR.getMessage());
+			}
+
+			// 題型是 text 的時候，不蒐集選項以及答案
+			if (dto.getType().equalsIgnoreCase(QuesType.TEXT.getType())) {
+				// 確認是否已存在
+				if (isDuplicated) {
+					continue mainLoop; // 跳過一次外層迴圈
+				}
+				vo.setQuizName(dto.getQuizName());
+				vo.setQuesId(dto.getQuesId());
+				vo.setQuesName(dto.getQuesName());
+				vo.setOptionCountMap(optionCountMap);
+				continue;
+			}
+
+			// 選項蒐集
+			// 沒有重複的 vo 就需要再收集選項
+			if (!isDuplicated) {
+				for (QuesOptions option : optionList) {
+					// 題目 數量
+					optionCountMap.put(option.getOption(), 0);
+				}
+			}
+			
+			// 蒐集答案(計算選項次數)
+			for (String str : answerList) {
+				// 取出舊的選項的次數
+				if(optionCountMap.containsKey(str)) {
+					int previousCount = optionCountMap.get(str);
+					optionCountMap.put(str, previousCount + 1);					
+				}
+			}
+
+			vo.setQuizName(dto.getQuizName());
+			vo.setQuesId(dto.getQuesId());
+			vo.setQuesName(dto.getQuesName());
+			vo.setOptionCountMap(optionCountMap);
+			// 最後不需要將 vo add 到 voList 中，是因為迴圈開始的時候，已經有將其加入
+		}
+		return new StaticticsRes(ResMessage.SUCCESS.getCode(),
+				ResMessage.SUCCESS.getMessage(), voList);
 	}
 
 }
