@@ -30,6 +30,14 @@ public class StatisticsVo {
 		this.quesName = quesName;
 		this.optionCountMap = optionCountMap;
 	}
+	
+	public StatisticsVo(String quizName, int quesId, String quesName) {
+		super();
+		this.quizName = quizName;
+		this.quesId = quesId;
+		this.quesName = quesName;
+	}
+
 
 	public String getQuizName() {
 		return quizName;

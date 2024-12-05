@@ -38,7 +38,7 @@ import quiz11.vo.GetQuesRes;
 import quiz11.vo.QuesOptions;
 import quiz11.vo.SearchReq;
 import quiz11.vo.SearchRes;
-import quiz11.vo.StaticticsRes;
+import quiz11.vo.StatisticsRes;
 import quiz11.vo.StatisticsDto;
 import quiz11.vo.StatisticsVo;
 
@@ -389,10 +389,10 @@ public class QuizServiceImpl implements QuizService {
 	}
 
 	@Override
-	public StaticticsRes statistics(int quizId) {
+	public StatisticsRes statistics(int quizId) {
 		// 參數檢查
 		if (quizId <= 0) {
-			return new StaticticsRes(ResMessage.QUIZ_ID_ERROR.getCode(), //
+			return new StatisticsRes(ResMessage.QUIZ_ID_ERROR.getCode(), //
 					ResMessage.QUIZ_ID_ERROR.getMessage());
 		}
 
@@ -441,7 +441,7 @@ public class QuizServiceImpl implements QuizService {
 					});
 				}
 			} catch (Exception e) {
-				return new StaticticsRes(ResMessage.OPTIONS_TRANSFER_ERROR.getCode(),
+				return new StatisticsRes(ResMessage.OPTIONS_TRANSFER_ERROR.getCode(),
 						ResMessage.OPTIONS_TRANSFER_ERROR.getMessage());
 			}
 
@@ -482,7 +482,78 @@ public class QuizServiceImpl implements QuizService {
 			vo.setOptionCountMap(optionCountMap);
 			// 最後不需要將 vo add 到 voList 中，是因為迴圈開始的時候，已經有將其加入
 		}
-		return new StaticticsRes(ResMessage.SUCCESS.getCode(),
+		return new StatisticsRes(ResMessage.SUCCESS.getCode(),
+				ResMessage.SUCCESS.getMessage(), voList);
+	}
+
+	
+	@Override
+	public StatisticsRes statisticsAAA(int quizId) {
+		// 參數檢查
+		if (quizId <= 0) {
+			return new StatisticsRes(ResMessage.QUIZ_ID_ERROR.getCode(), //
+					ResMessage.QUIZ_ID_ERROR.getMessage());
+		}
+		List<StatisticsDto> dtoList = feedbackDao.getStatisticsByQuizId(quizId);
+		// 將 Dto 的內容轉成 Vo
+		List<StatisticsVo> voList = new ArrayList<>();
+		for (StatisticsDto dto : dtoList) {
+			boolean isDuplicated = false;
+			// voList.stream().filter(vo -> vo.getQuesId() == dto.getQuesId()): 有資料就會保留，沒資料就是 null
+			// filter 的結果會是多個，所以用 findFirst() 取得第一筆
+			// orElse(null) 表示沒資料時回傳 null
+			StatisticsVo vo = voList.stream().filter(item -> item.getQuesId() == dto.getQuesId())//
+					.findFirst().orElse(null);
+			// 
+			if(vo != null) {
+				isDuplicated = true;
+				vo = new StatisticsVo(dto.getQuizName(), dto.getQuesId(), dto.getQuesName());
+				voList.add(vo);
+			}			
+			List<QuesOptions> optionsList = new ArrayList<>();
+			List<String> answerList = new ArrayList<>();
+			// 題型非 text:
+			if (!dto.getType().equalsIgnoreCase(QuesType.TEXT.getType())) {
+				try {
+					// 1. 題號不重複時，轉換選項字串為選項類別
+					// 1.1 把 Ques 中的 options 字串轉成 Options 類別			
+					// 1.2 要將選項字串傳換成對應的 List
+					if(!isDuplicated) {
+						optionsList = mapper.readValue(dto.getOptionsStr(), new TypeReference<>() {
+						});
+					}
+					
+					// 2. 轉換答案字串回 List: answer 此欄位有值(包括空陣列的字串)
+					if(StringUtils.hasText(dto.getAnswerStr())) {
+						answerList = mapper.readValue(dto.getAnswerStr(), new TypeReference<>() {
+						});
+					}
+				} catch (Exception e) {
+					return new StatisticsRes(ResMessage.OPTIONS_TRANSFER_ERROR.getCode(), //
+							ResMessage.OPTIONS_TRANSFER_ERROR.getMessage());
+				}
+			}
+			// 蒐集選項以及次數
+			// 題號重複時，從 vo 取 optionCountMap
+			Map<String, Integer> optionCountMap = new HashMap<>();
+			if(isDuplicated) {
+				optionCountMap = vo.getOptionCountMap();
+			} else {
+				for(QuesOptions opItem : optionsList) {
+					optionCountMap.put(opItem.getOption(), 0);
+				}
+			}
+			// 將次數 + 1
+			for(String ans : answerList) {
+					optionCountMap.put(ans, optionCountMap.get(ans) + 1);	
+			}
+			
+			
+			vo.setOptionCountMap(optionCountMap);
+		}
+
+
+		return new StatisticsRes(ResMessage.SUCCESS.getCode(), //
 				ResMessage.SUCCESS.getMessage(), voList);
 	}
 

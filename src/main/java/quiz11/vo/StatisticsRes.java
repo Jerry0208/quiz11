@@ -4,20 +4,20 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class StaticticsRes extends BasicRes {
+public class StatisticsRes extends BasicRes {
 
 	@JsonProperty("statistics_list")
 	private List<StatisticsVo> statisticsVoList;
 
-	public StaticticsRes() {
+	public StatisticsRes() {
 		super();
 	}
 
-	public StaticticsRes(int code, String massage) {
+	public StatisticsRes(int code, String massage) {
 		super(code, massage);
 	}
 
-	public StaticticsRes(int code, String massage, List<StatisticsVo> statisticsVoList) {
+	public StatisticsRes(int code, String massage, List<StatisticsVo> statisticsVoList) {
 		super(code, massage);
 		this.statisticsVoList = statisticsVoList;
 	}

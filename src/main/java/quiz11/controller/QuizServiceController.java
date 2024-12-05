@@ -19,7 +19,7 @@ import quiz11.vo.GetQuesReq;
 import quiz11.vo.GetQuesRes;
 import quiz11.vo.SearchReq;
 import quiz11.vo.SearchRes;
-import quiz11.vo.StaticticsRes;
+import quiz11.vo.StatisticsRes;
 
 @RestController
 @RequestMapping("quiz/")
@@ -65,8 +65,13 @@ public class QuizServiceController {
 	}
 	
 	@GetMapping(value = "statistics")
-	public StaticticsRes statistics(@RequestParam int quizId) {
+	public StatisticsRes statistics(@RequestParam int quizId) {
 		return quizService.statistics(quizId);
+	}
+
+	@GetMapping(value = "statisticsAAA")
+	public StatisticsRes statisticsAAA(@RequestParam int quizId) {
+		return quizService.statisticsAAA(quizId);
 	}
 
 }
