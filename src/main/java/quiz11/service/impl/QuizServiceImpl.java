@@ -369,7 +369,6 @@ public class QuizServiceImpl implements QuizService {
 			} catch (JsonProcessingException e) {
 				return new BasicRes(ResMessage.OPTIONS_TRANSFER_ERROR.getCode(),
 						ResMessage.OPTIONS_TRANSFER_ERROR.getMessage());
-
 			}
 		}
 		// 存檔
@@ -433,10 +432,8 @@ public class QuizServiceImpl implements QuizService {
 				}
 
 				// 只有以下條件才能將答案字串轉乘 List<String>
-				// 1.answer
-				// 2.非簡答(文字)類別題目
-				if (StringUtils.hasText(dto.getAnswerStr()) //
-						&& !dto.getType().equalsIgnoreCase(QuesType.TEXT.getType())) {
+				// 1.answer 有內容的字串(空白字串除外)
+				if (StringUtils.hasText(dto.getAnswerStr())) {
 					answerList = mapper.readValue(dto.getAnswerStr(), new TypeReference<>() {
 					});
 				}
@@ -447,14 +444,25 @@ public class QuizServiceImpl implements QuizService {
 
 			// 題型是 text 的時候，不蒐集選項以及答案
 			if (dto.getType().equalsIgnoreCase(QuesType.TEXT.getType())) {
-				// 確認是否已存在
+				// 重複
 				if (isDuplicated) {
+					//有內容的字串(空白字串除外)
+					if(StringUtils.hasText(answerList.get(0))) {
+						vo.getTextAnswerList().addAll(answerList);						
+					}
 					continue mainLoop; // 跳過一次外層迴圈
 				}
+				// set 基本資料
 				vo.setQuizName(dto.getQuizName());
 				vo.setQuesId(dto.getQuesId());
 				vo.setQuesName(dto.getQuesName());
 				vo.setOptionCountMap(optionCountMap);
+				// 不重複時，有內容的字串(空白字串除外)
+				if(StringUtils.hasText(answerList.get(0))) {
+					vo.setTextAnswerList(answerList);					
+				}else {
+					vo.setTextAnswerList(new ArrayList<>());
+				}
 				continue;
 			}
 
@@ -504,12 +512,16 @@ public class QuizServiceImpl implements QuizService {
 			// orElse(null) 表示沒資料時回傳 null
 			StatisticsVo vo = voList.stream().filter(item -> item.getQuesId() == dto.getQuesId())//
 					.findFirst().orElse(null);
-			// 
+			
+			// 如果 vo 已存在則  isDuplicated 為 true
+			// 沒有則以當筆 dto 的問卷名稱、題目id、題目名稱建立一個新的 vo 後加入 voList 內
 			if(vo != null) {
 				isDuplicated = true;
+			}else {
 				vo = new StatisticsVo(dto.getQuizName(), dto.getQuesId(), dto.getQuesName());
 				voList.add(vo);
-			}			
+			}
+			
 			List<QuesOptions> optionsList = new ArrayList<>();
 			List<String> answerList = new ArrayList<>();
 			// 題型非 text:
@@ -545,7 +557,7 @@ public class QuizServiceImpl implements QuizService {
 			}
 			// 將次數 + 1
 			for(String ans : answerList) {
-					optionCountMap.put(ans, optionCountMap.get(ans) + 1);	
+					optionCountMap.put(ans, optionCountMap.get(ans) + 1);
 			}
 			
 			

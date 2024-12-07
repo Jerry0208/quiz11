@@ -31,7 +31,7 @@ public class QuizServiceTest {
 	public void getQuesTest() {
 		ObjectMapper mapper = new ObjectMapper();
 		GetQuesRes res = quizservice.getQues(new GetQuesReq(4));
-		System.out.println(res.getCode() + res.getMassage());
+		System.out.println(res.getCode() + res.getMessage());
 		for (Ques item : res.getQues()) {
 			System.out.printf("問卷id : %d, 問題id : %d, 問題名稱: %s, 選項類型代號: %s, 是否必填: %b, \n選項內容: %s \n", item.getQuizId(),
 					item.getQuesId(), item.getQuesName(), item.getType(), item.isRequired(), item.getOptions());
