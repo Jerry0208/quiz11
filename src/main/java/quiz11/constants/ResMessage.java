@@ -40,4 +40,7 @@ public enum ResMessage {
 		return message;
 	}
 
+//	public static class Constants{
+//		public static final String QUIZ_PARAM_ERROR_MSG = "";
+//	}
 }

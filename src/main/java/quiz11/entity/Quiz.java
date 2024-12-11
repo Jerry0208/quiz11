@@ -8,8 +8,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.validation.constraints.FutureOrPresent;
+import javax.validation.constraints.NotBlank;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import quiz11.constants.MsgConstants;
 
 @Entity
 @Table(name = "quiz")
@@ -23,16 +27,20 @@ public class Quiz {
 	@Column(name = "id")
 	private int id;
 
+	@NotBlank(message = MsgConstants.QUIZ_PARAM_ERROR_MSG) // 數據驗證:不能為 null、空字串、空白字串(message 觸法條件時會回的訊息)
 	@Column(name = "name")
 	private String name;
 
+	@NotBlank(message = MsgConstants.QUIZ_PARAM_ERROR_MSG) // 數據驗證:不能為 null、空字串、空白字串(message 觸法條件時會回的訊息)
 	@Column(name = "description")
 	private String description;
 
+	@FutureOrPresent(message = MsgConstants.DATE_ERROR) // 數據驗證 : 開始時間得是今天或是之後 
 	@JsonProperty("start_date")
 	@Column(name = "start_date")
-	private LocalDate startDate = LocalDate.now();
+	private LocalDate startDate = LocalDate.now(); //給預設值
 	
+	@FutureOrPresent(message = MsgConstants.DATE_ERROR) // 數據驗證 : 結束時間得是今天或是之後 
 	@JsonProperty("end_date")
 	@Column(name = "end_date")
 	private LocalDate endDate = LocalDate.now();

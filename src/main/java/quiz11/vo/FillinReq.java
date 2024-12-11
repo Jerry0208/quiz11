@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.constraints.NotBlank;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -17,6 +19,7 @@ public class FillinReq {
 
 	private String phone;
 
+	@NotBlank(message = "{email.notBlank}")
 	private String email;
 
 	private int age;

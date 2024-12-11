@@ -1,5 +1,7 @@
 package quiz11.controller;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,12 +32,12 @@ public class QuizServiceController {
 	private QuizService quizService;
 
 	@PostMapping(value = "create")
-	public BasicRes create(@RequestBody CreateUpdateReq req) {
+	public BasicRes create(@Valid @RequestBody CreateUpdateReq req) {
 		return quizService.create(req);
 	};
 
 	@PostMapping(value = "update")
-	public BasicRes update(@RequestBody CreateUpdateReq req) {
+	public BasicRes update(@Valid @RequestBody CreateUpdateReq req) {
 		return quizService.update(req);
 	}
 
@@ -55,7 +57,7 @@ public class QuizServiceController {
 	};
 	
 	@PostMapping(value = "fillin")
-	public BasicRes fillin(@RequestBody FillinReq req) {
+	public BasicRes fillin(@Valid @RequestBody FillinReq req) {
 		return quizService.fillin(req);
 	}
 	

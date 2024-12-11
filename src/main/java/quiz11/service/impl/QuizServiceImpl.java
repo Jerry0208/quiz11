@@ -96,19 +96,23 @@ public class QuizServiceImpl implements QuizService {
 			return new BasicRes(ResMessage.QUIZ_PARAM_ERROR.getCode(), ResMessage.QUIZ_PARAM_ERROR.getMessage());
 		}
 
+
+		// 註解的程式碼已在 req 中使用 @valid 做資料檢查
+		
 		// 檢查 問卷名 跟 問卷敘述 是否有填寫
-		if (!StringUtils.hasText(req.getName()) || !StringUtils.hasText(req.getDescription())) {
-			return new BasicRes(ResMessage.QUIZ_PARAM_ERROR.getCode(), ResMessage.QUIZ_PARAM_ERROR.getMessage());
-		}
+//		if (!StringUtils.hasText(req.getName()) || !StringUtils.hasText(req.getDescription())) {
+//			return new BasicRes(ResMessage.QUIZ_PARAM_ERROR.getCode(), ResMessage.QUIZ_PARAM_ERROR.getMessage());
+//		}
+		
 		// 檢查時間、檢查開始時間不能比結束時間晚
 		if (req.getStartDate() == null || req.getEndDate() == null || req.getStartDate().isAfter(req.getEndDate())) {
 			return new BasicRes(ResMessage.DATE_ERROR.getCode(), ResMessage.DATE_ERROR.getMessage());
 		}
 
 		// 檢查開始時間不能今天比早(問卷的開始時間最晚為今天)
-		if (req.getStartDate().isBefore(LocalDate.now())) {
-			return new BasicRes(ResMessage.DATE_ERROR.getCode(), ResMessage.DATE_ERROR.getMessage());
-		}
+//		if (req.getStartDate().isBefore(LocalDate.now())) {
+//			return new BasicRes(ResMessage.DATE_ERROR.getCode(), ResMessage.DATE_ERROR.getMessage());
+//		}
 
 		// 檢查問卷是否有選項內容
 		if (CollectionUtils.isEmpty(req.getQuesLsit())) {
@@ -118,10 +122,10 @@ public class QuizServiceImpl implements QuizService {
 		// 檢查 Ques
 		for (Ques item : req.getQuesLsit()) {
 			// 題目 id 不能小於等於 0 ， 題目名稱不能不存在
-			if (item.getQuesId() <= 0 || !StringUtils.hasText(item.getQuesName())
-					|| !StringUtils.hasText(item.getType())) {
-				return new BasicRes(ResMessage.QUES_PARAM_ERROR.getCode(), ResMessage.QUES_PARAM_ERROR.getMessage());
-			}
+//			if (item.getQuesId() <= 0 || !StringUtils.hasText(item.getQuesName())
+//					|| !StringUtils.hasText(item.getType())) {
+//				return new BasicRes(ResMessage.QUES_PARAM_ERROR.getCode(), ResMessage.QUES_PARAM_ERROR.getMessage());
+//			}
 			// 檢查題目類型: 單選(single)、 多選(multi)、文字(text)
 			if (!QuesType.checkType(item.getType())) {
 				return new BasicRes(ResMessage.QUES_TYPE_ERROR.getCode(), ResMessage.QUES_TYPE_ERROR.getMessage());
@@ -396,6 +400,11 @@ public class QuizServiceImpl implements QuizService {
 		}
 
 		List<StatisticsDto> dtoList = feedbackDao.getStatisticsByQuizId(quizId);
+		
+		if(CollectionUtils.isEmpty(dtoList)) {
+			return new StatisticsRes(ResMessage.SUCCESS.getCode(), //
+					ResMessage.SUCCESS.getMessage(), new ArrayList<>());
+		}
 
 		// 將 Dto 的內容轉成 Vo
 		List<StatisticsVo> voList = new ArrayList<>();

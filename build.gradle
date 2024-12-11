@@ -19,16 +19,18 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
-	//JPA           group:                   name:
+	// JPA           group:                   name:
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	//mysql connector
+	// mysql connector
 	implementation 'com.mysql:mysql-connector-j'
-	//spring security ±K½X¥[±K¥Î
+	// spring security 
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-	//web
+	// web
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	//Hot Deployment : ±M®×±Ò°Ê¤¤¡A­×§ïµ{¦¡½X¨ÃÀx¦s«á¡A±M®×·|­«·s±Ò°Ê
+	// Hot Deployment
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	// validation è³‡æ–™é©—éŽ®
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
