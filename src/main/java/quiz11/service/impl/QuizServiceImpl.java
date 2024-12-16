@@ -11,6 +11,7 @@ import java.util.Optional;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -96,14 +97,13 @@ public class QuizServiceImpl implements QuizService {
 			return new BasicRes(ResMessage.QUIZ_PARAM_ERROR.getCode(), ResMessage.QUIZ_PARAM_ERROR.getMessage());
 		}
 
-
 		// 註解的程式碼已在 req 中使用 @valid 做資料檢查
-		
+
 		// 檢查 問卷名 跟 問卷敘述 是否有填寫
 //		if (!StringUtils.hasText(req.getName()) || !StringUtils.hasText(req.getDescription())) {
 //			return new BasicRes(ResMessage.QUIZ_PARAM_ERROR.getCode(), ResMessage.QUIZ_PARAM_ERROR.getMessage());
 //		}
-		
+
 		// 檢查時間、檢查開始時間不能比結束時間晚
 		if (req.getStartDate() == null || req.getEndDate() == null || req.getStartDate().isAfter(req.getEndDate())) {
 			return new BasicRes(ResMessage.DATE_ERROR.getCode(), ResMessage.DATE_ERROR.getMessage());
@@ -203,54 +203,77 @@ public class QuizServiceImpl implements QuizService {
 		return new BasicRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage());
 	}
 
+	/**
+	 * @Cacheable cacheNames 等號後面的字串可以多個，多個時要使用大括號{}，例如:{"name1","name2"}<br>
+	 *            cacheNames 可以當作是書本目錄的"章"，命名方法通常為:專案名稱_方法名稱<br>
+	 *            key = "#req" #取方法參數的符號，有多的參數的值時要存時，要使用 .concat() 方法串結<br>
+	 *            "非字串型態資料"要使用.toString()轉換資料型態成 String<br>
+	 *            cache 不支持 .concat("字串1","字串2","字串3")這種寫法<br>
+	 *            key 的值不能為 "null" ，但可以是"空字串"
+	 *            <br>
+	 *            以下是在 @Cacheable 中，是可以篩選要存進 cache 的方法<br>
+	 *            condition(條件)，對方法的"參數"進行判斷，當達成條件時，就"會"暫存<br>
+	 *            例:condition = "#req.name.length() >= 1";當 req.name 長度 >= 1
+	 *            時就存cache<br>
+	 *            unless(除了)，對方法的"參數"跟"結果"進行判斷，當達成條件時，就"不會"暫存<br>
+	 *            例:unless = "#result.code != 200";當 SearchRes.code != 200
+	 *            時就不會存cache<br>
+	 *            #result 會自動去取得 return 的值，所以不需要幫 return 建立實體，保持匿名即可<br>
+	 */
+	@Cacheable(cacheNames = "quiz_search", //
+			key = "#req.name.concat('-').concat('#req.startDate'.toString())"
+					+ ".concat('-').concat('#req.endDate'.toString())", //
+			unless = "#result.code != 200")
 	@Override
 	public SearchRes search(SearchReq req) {
 
+		// 因為 service 中有使用 cache，所以必須要先確認 req 中的參數的值都不是 null
+		// 下方條件值的轉換放到 controller
 		// 檢視條件
-		String name = req.getName();
-		// 如果 name = null或空字串或全空白字串，一律都轉成空字串
-		if (!StringUtils.hasText(name)) {
-			name = "";
-		}
+//		String name = req.getName();
+//		// 如果 name = null或空字串或全空白字串，一律都轉成空字串
+//		if (!StringUtils.hasText(name)) {
+//			name = "";
+//		}
+		// 若沒有開始日期條件，將日期轉成很早的時間
+//		LocalDate startDate = req.getStartDate();
+//		if (startDate == null) {
+//			startDate = LocalDate.of(1970, 1, 1);
+//		}
+//		// 若沒有開始日期條件，將日期轉成很久的未來時間
+//		LocalDate endDate = req.getEndDate();
+//		if (endDate == null) {
+//			endDate = LocalDate.of(9999, 12, 31);
+//		}
 
 		// 依狀態搜尋
 		if (StringUtils.hasText(req.getStatus())) {
 			if (req.getStatus().equalsIgnoreCase("進行中")) {
 				return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
-						quizDao.getInProgress(name, LocalDate.now()));
+						quizDao.getInProgress(req.getName(), LocalDate.now()));
 			}
 			if (req.getStatus().equalsIgnoreCase("已結束")) {
 				return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
-						quizDao.getCompleted(name, LocalDate.now()));
+						quizDao.getCompleted(req.getName(), LocalDate.now()));
 			}
 			if (req.getStatus().equalsIgnoreCase("尚未開始")) {
 				return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
-						quizDao.getNotStartedYet(name, LocalDate.now()));
+						quizDao.getNotStartedYet(req.getName(), LocalDate.now()));
 			}
 			if (req.getStatus().equalsIgnoreCase("尚未公布")) {
 				return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
-						quizDao.getNotYetAnnounced(name, LocalDate.now()));
+						quizDao.getNotYetAnnounced(req.getName(), LocalDate.now()));
 			}
 		}
 
-		// 若沒有開始日期條件，將日期轉成很早的時間
-		LocalDate startDate = req.getStartDate();
-		if (startDate == null) {
-			startDate = LocalDate.of(1970, 1, 1);
-		}
-		// 若沒有開始日期條件，將日期轉成很久的未來時間
-		LocalDate endDate = req.getEndDate();
-		if (endDate == null) {
-			endDate = LocalDate.of(9999, 12, 31);
-		}
 
 		if (req.isAdminMode()) {
 			return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
-					quizDao.getByConditionsAll(name, startDate, endDate));
+					quizDao.getByConditionsAll(req.getName(), req.getStartDate(), req.getEndDate()));
 		}
 
 		return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
-				quizDao.getByConditions(name, startDate, endDate));
+				quizDao.getByConditions(req.getName(), req.getStartDate(), req.getEndDate()));
 	}
 
 	@Override
@@ -400,8 +423,8 @@ public class QuizServiceImpl implements QuizService {
 		}
 
 		List<StatisticsDto> dtoList = feedbackDao.getStatisticsByQuizId(quizId);
-		
-		if(CollectionUtils.isEmpty(dtoList)) {
+
+		if (CollectionUtils.isEmpty(dtoList)) {
 			return new StatisticsRes(ResMessage.SUCCESS.getCode(), //
 					ResMessage.SUCCESS.getMessage(), new ArrayList<>());
 		}
@@ -455,9 +478,9 @@ public class QuizServiceImpl implements QuizService {
 			if (dto.getType().equalsIgnoreCase(QuesType.TEXT.getType())) {
 				// 重複
 				if (isDuplicated) {
-					//有內容的字串(空白字串除外)
-					if(StringUtils.hasText(answerList.get(0))) {
-						vo.getTextAnswerList().addAll(answerList);						
+					// 有內容的字串(空白字串除外)
+					if (StringUtils.hasText(answerList.get(0))) {
+						vo.getTextAnswerList().addAll(answerList);
 					}
 					continue mainLoop; // 跳過一次外層迴圈
 				}
@@ -467,9 +490,9 @@ public class QuizServiceImpl implements QuizService {
 				vo.setQuesName(dto.getQuesName());
 				vo.setOptionCountMap(optionCountMap);
 				// 不重複時，有內容的字串(空白字串除外)
-				if(StringUtils.hasText(answerList.get(0))) {
-					vo.setTextAnswerList(answerList);					
-				}else {
+				if (StringUtils.hasText(answerList.get(0))) {
+					vo.setTextAnswerList(answerList);
+				} else {
 					vo.setTextAnswerList(new ArrayList<>());
 				}
 				continue;
@@ -483,13 +506,13 @@ public class QuizServiceImpl implements QuizService {
 					optionCountMap.put(option.getOption(), 0);
 				}
 			}
-			
+
 			// 蒐集答案(計算選項次數)
 			for (String str : answerList) {
 				// 取出舊的選項的次數
-				if(optionCountMap.containsKey(str)) {
+				if (optionCountMap.containsKey(str)) {
 					int previousCount = optionCountMap.get(str);
-					optionCountMap.put(str, previousCount + 1);					
+					optionCountMap.put(str, previousCount + 1);
 				}
 			}
 
@@ -499,11 +522,9 @@ public class QuizServiceImpl implements QuizService {
 			vo.setOptionCountMap(optionCountMap);
 			// 最後不需要將 vo add 到 voList 中，是因為迴圈開始的時候，已經有將其加入
 		}
-		return new StatisticsRes(ResMessage.SUCCESS.getCode(),
-				ResMessage.SUCCESS.getMessage(), voList);
+		return new StatisticsRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(), voList);
 	}
 
-	
 	@Override
 	public StatisticsRes statisticsAAA(int quizId) {
 		// 參數檢查
@@ -516,36 +537,37 @@ public class QuizServiceImpl implements QuizService {
 		List<StatisticsVo> voList = new ArrayList<>();
 		for (StatisticsDto dto : dtoList) {
 			boolean isDuplicated = false;
-			// voList.stream().filter(vo -> vo.getQuesId() == dto.getQuesId()): 有資料就會保留，沒資料就是 null
+			// voList.stream().filter(vo -> vo.getQuesId() == dto.getQuesId()):
+			// 有資料就會保留，沒資料就是 null
 			// filter 的結果會是多個，所以用 findFirst() 取得第一筆
 			// orElse(null) 表示沒資料時回傳 null
 			StatisticsVo vo = voList.stream().filter(item -> item.getQuesId() == dto.getQuesId())//
 					.findFirst().orElse(null);
-			
-			// 如果 vo 已存在則  isDuplicated 為 true
+
+			// 如果 vo 已存在則 isDuplicated 為 true
 			// 沒有則以當筆 dto 的問卷名稱、題目id、題目名稱建立一個新的 vo 後加入 voList 內
-			if(vo != null) {
+			if (vo != null) {
 				isDuplicated = true;
-			}else {
+			} else {
 				vo = new StatisticsVo(dto.getQuizName(), dto.getQuesId(), dto.getQuesName());
 				voList.add(vo);
 			}
-			
+
 			List<QuesOptions> optionsList = new ArrayList<>();
 			List<String> answerList = new ArrayList<>();
 			// 題型非 text:
 			if (!dto.getType().equalsIgnoreCase(QuesType.TEXT.getType())) {
 				try {
 					// 1. 題號不重複時，轉換選項字串為選項類別
-					// 1.1 把 Ques 中的 options 字串轉成 Options 類別			
+					// 1.1 把 Ques 中的 options 字串轉成 Options 類別
 					// 1.2 要將選項字串傳換成對應的 List
-					if(!isDuplicated) {
+					if (!isDuplicated) {
 						optionsList = mapper.readValue(dto.getOptionsStr(), new TypeReference<>() {
 						});
 					}
-					
+
 					// 2. 轉換答案字串回 List: answer 此欄位有值(包括空陣列的字串)
-					if(StringUtils.hasText(dto.getAnswerStr())) {
+					if (StringUtils.hasText(dto.getAnswerStr())) {
 						answerList = mapper.readValue(dto.getAnswerStr(), new TypeReference<>() {
 						});
 					}
@@ -557,22 +579,20 @@ public class QuizServiceImpl implements QuizService {
 			// 蒐集選項以及次數
 			// 題號重複時，從 vo 取 optionCountMap
 			Map<String, Integer> optionCountMap = new HashMap<>();
-			if(isDuplicated) {
+			if (isDuplicated) {
 				optionCountMap = vo.getOptionCountMap();
 			} else {
-				for(QuesOptions opItem : optionsList) {
+				for (QuesOptions opItem : optionsList) {
 					optionCountMap.put(opItem.getOption(), 0);
 				}
 			}
 			// 將次數 + 1
-			for(String ans : answerList) {
-					optionCountMap.put(ans, optionCountMap.get(ans) + 1);
+			for (String ans : answerList) {
+				optionCountMap.put(ans, optionCountMap.get(ans) + 1);
 			}
-			
-			
+
 			vo.setOptionCountMap(optionCountMap);
 		}
-
 
 		return new StatisticsRes(ResMessage.SUCCESS.getCode(), //
 				ResMessage.SUCCESS.getMessage(), voList);

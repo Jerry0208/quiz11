@@ -52,4 +52,24 @@ public class SearchReq {
 		return AdminMode;
 	}
 
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public void setStartDate(LocalDate startDate) {
+		this.startDate = startDate;
+	}
+
+	public void setEndDate(LocalDate endDate) {
+		this.endDate = endDate;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public void setAdminMode(boolean adminMode) {
+		AdminMode = adminMode;
+	}
+
 }

@@ -1,8 +1,11 @@
 package quiz11.controller;
 
+import java.time.LocalDate;
+
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,24 +51,48 @@ public class QuizServiceController {
 
 	@PostMapping(value = "search")
 	public SearchRes search(@RequestBody SearchReq req) {
+		// 因為 service 中有使用 cache，所以必須要先確認 req 中的參數的值都不是 null
+		// 檢視條件
+		String name = req.getName();
+		// 如果 name = null或空字串或全空白字串，一律都轉成空字串
+		if (!StringUtils.hasText(name)) {
+			name = "";
+			// 把值 set 回 req
+			req.setName(name);
+		}
+		// 若沒有開始日期條件，將日期轉成很早的時間
+		LocalDate startDate = req.getStartDate();
+		if (startDate == null) {
+			startDate = LocalDate.of(1970, 1, 1);
+			// 把值 set 回 req
+			req.setStartDate(startDate);;
+		}
+		// 若沒有開始日期條件，將日期轉成很久的未來時間
+		LocalDate endDate = req.getEndDate();
+		if (endDate == null) {
+			endDate = LocalDate.of(9999, 12, 31);
+			// 把值 set 回 req
+			req.setEndDate(endDate);
+			
+		}
 		return quizService.search(req);
 	};
-	
+
 	@PostMapping(value = "get_ques")
 	public GetQuesRes getQues(@RequestBody GetQuesReq req) {
 		return quizService.getQues(req);
 	};
-	
+
 	@PostMapping(value = "fillin")
 	public BasicRes fillin(@Valid @RequestBody FillinReq req) {
 		return quizService.fillin(req);
 	}
-	
+
 	@GetMapping(value = "feedback") // http://localhost:8080/quiz/feedback ? quizId = 問卷id
 	public FeedbackRes feedback(@RequestParam int quizId) {
 		return quizService.feedback(quizId);
 	}
-	
+
 	@GetMapping(value = "statistics")
 	public StatisticsRes statistics(@RequestParam int quizId) {
 		return quizService.statistics(quizId);
