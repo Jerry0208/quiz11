@@ -31,6 +31,11 @@ dependencies {
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	// validation 資料驗鎮
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	// cache 快取
+	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	// caffeine cache 取代 guava
+	implementation 'com.github.ben-manes.caffeine:caffeine'
+	
 	
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
