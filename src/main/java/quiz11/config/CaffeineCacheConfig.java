@@ -21,7 +21,7 @@ public class CaffeineCacheConfig {
 		cacheManager.setCaffeine(Caffeine.newBuilder()
 				// 設定過期時間；每次處理(寫或讀)後，固定時間內不再有動作，快取資料就會失效
 				.expireAfterAccess(600, TimeUnit.SECONDS)
-				// 初始的緩存空間大小
+				// 初始的緩存空間的最小筆數
 				.initialCapacity(100)
 				// 緩存的最大筆數
 				.maximumSize(500));

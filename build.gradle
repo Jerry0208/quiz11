@@ -35,6 +35,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
 	// caffeine cache 取代 guava
 	implementation 'com.github.ben-manes.caffeine:caffeine'
+	// api線上文件 http://localhost:8080/swagger-ui/index.html
+	implementation 'org.springdoc:springdoc-openapi-ui:1.8.0'
+
 	
 	
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

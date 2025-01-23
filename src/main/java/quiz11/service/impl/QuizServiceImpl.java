@@ -11,6 +11,7 @@ import java.util.Optional;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -39,8 +40,8 @@ import quiz11.vo.GetQuesRes;
 import quiz11.vo.QuesOptions;
 import quiz11.vo.SearchReq;
 import quiz11.vo.SearchRes;
-import quiz11.vo.StatisticsRes;
 import quiz11.vo.StatisticsDto;
+import quiz11.vo.StatisticsRes;
 import quiz11.vo.StatisticsVo;
 
 @Service
@@ -57,6 +58,7 @@ public class QuizServiceImpl implements QuizService {
 	@Autowired
 	private FeedbackDao feedbackDao;
 
+	@CacheEvict(cacheNames = "quiz_search", allEntries = true) // 刪除暫存
 	@Transactional
 	@Override
 	public BasicRes create(CreateUpdateReq req) {
@@ -140,6 +142,7 @@ public class QuizServiceImpl implements QuizService {
 		return null;
 	}
 
+	@CacheEvict(cacheNames = "quiz_search", allEntries = true) // 刪除暫存
 	@Transactional
 	@Override
 	public BasicRes update(CreateUpdateReq req) {
@@ -194,6 +197,7 @@ public class QuizServiceImpl implements QuizService {
 		return new BasicRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage());
 	}
 
+	@CacheEvict(cacheNames = "quiz_search", allEntries = true) // 刪除暫存
 	@Override
 	public BasicRes delete(DeleteReq req) {
 		// 刪問卷
@@ -204,13 +208,27 @@ public class QuizServiceImpl implements QuizService {
 	}
 
 	/**
+	 * for spring boot 3.x 版本<br>
+	 * key 等號後面的字串，因為 req 是物件，使用 #req 會取不到參數值，簡單點的方法是使用位置 #p0 來表示方法中第一個參數<br>
+	 * 多參數的串接，不使用 concat，直接在字串中使用加號(+)串多個參數<br>
+	 * 字串中使用單引號來表示字串<br>
+	 * 串接值的資料型態不是 String 時，可以使用 .toString() 轉換<br>
+	 * #result: 表示方法返回的結果；即使是不同方法有不同的返回資料型態，也通用<br>
+	 * unless 可以翻成排除的意思，後面的字串是指會排除符合條件的 --> 排除 res 不成功，即只暫存成功時的資料<br>
+	 * 
+	 * @Cacheable(cacheNames = "quiz_search", //<br>
+	 *                       key = "#p0.name + '-' + #p0.startDate.toString() + '-' <br>
+	 *                       + #p0.endDate.toString()",  <br>
+	 *                       unless = "#result.code != 200") <br>
+	 */
+
+	/**
 	 * @Cacheable cacheNames 等號後面的字串可以多個，多個時要使用大括號{}，例如:{"name1","name2"}<br>
 	 *            cacheNames 可以當作是書本目錄的"章"，命名方法通常為:專案名稱_方法名稱<br>
 	 *            key = "#req" #取方法參數的符號，有多的參數的值時要存時，要使用 .concat() 方法串結<br>
 	 *            "非字串型態資料"要使用.toString()轉換資料型態成 String<br>
 	 *            cache 不支持 .concat("字串1","字串2","字串3")這種寫法<br>
-	 *            key 的值不能為 "null" ，但可以是"空字串"
-	 *            <br>
+	 *            key 的值不能為 "null" ，但可以是"空字串" <br>
 	 *            以下是在 @Cacheable 中，是可以篩選要存進 cache 的方法<br>
 	 *            condition(條件)，對方法的"參數"進行判斷，當達成條件時，就"會"暫存<br>
 	 *            例:condition = "#req.name.length() >= 1";當 req.name 長度 >= 1
@@ -218,7 +236,11 @@ public class QuizServiceImpl implements QuizService {
 	 *            unless(除了)，對方法的"參數"跟"結果"進行判斷，當達成條件時，就"不會"暫存<br>
 	 *            例:unless = "#result.code != 200";當 SearchRes.code != 200
 	 *            時就不會存cache<br>
-	 *            #result 會自動去取得 return 的值，所以不需要幫 return 建立實體，保持匿名即可<br>
+	 *            #result 表示方法返回的結果，會自動去取得 return 的值，所以不需要幫 return 建立實體，保持匿名即可<br>
+	 *            <br>
+	 * @CacheEvict 當有使用到新增、更新、刪除時，要使用 @CacheEvict 刪除暫除，因為不刪除暫存的話，暫存的資料會跟資料庫不一致<br>
+	 *             可以只用 cacheNames 刪除整個"章"，也可以加上 key 指定要刪的"節"<br>
+	 *             強制刪掉整個 cacheNames 下的所有 key 值，要將上 allEntries = true ，預設是 false
 	 */
 	@Cacheable(cacheNames = "quiz_search", //
 			key = "#req.name.concat('-').concat('#req.startDate'.toString())"
@@ -265,7 +287,6 @@ public class QuizServiceImpl implements QuizService {
 						quizDao.getNotYetAnnounced(req.getName(), LocalDate.now()));
 			}
 		}
-
 
 		if (req.isAdminMode()) {
 			return new SearchRes(ResMessage.SUCCESS.getCode(), ResMessage.SUCCESS.getMessage(),
